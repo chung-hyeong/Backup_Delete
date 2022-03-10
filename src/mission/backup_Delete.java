@@ -92,6 +92,10 @@ public class backup_Delete {
         System.out.print("파일 경로를 입력하세요: ");
         return br.readLine();
     }
+    public static int getDeleteCycle() throws IOException{
+        System.out.print("삭제 주기(분)를 입력하세요(하루 = 1440): ");
+        return Integer.parseInt(br.readLine());
+    }
 
     public static int reserveTime() throws IOException{
         System.out.print("삭제할 시간을 입력하세요(ex. 0930, 2359): ");
@@ -100,8 +104,8 @@ public class backup_Delete {
         if(remainTime <= 0)
             remainTime += 86399;
         return remainTime;
-
     }
+
     public static void mailSend3Day(){
         if(dayCheck == 3){
             mail.mailSend();
@@ -113,8 +117,9 @@ public class backup_Delete {
     }
 
     public static void getMailId(){
+
         Console cons = System.console();
-        id = cons.readLine("Enter your ID: ");
+        id = cons.readLine("Enter your E-Mail: ");
         passwd = new String(cons.readPassword("Enter Your Password: "));
 
         mail = new mailSending(id, passwd);
@@ -139,9 +144,11 @@ public class backup_Delete {
         final ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1); // 주기적인 작업
         String folderRoute = inputFolderPath();
 
-        remainTime = reserveTime();
         getMailId();
+        mail = new mailSending(id, passwd);
         mail.sendTest();
+        remainTime = reserveTime();
+        int cycle = getDeleteCycle();
 
         exec.scheduleAtFixedRate(new Runnable(){
             public void run(){
@@ -152,7 +159,7 @@ public class backup_Delete {
                     }
 
                     else{
-                        remainTime = 9; // 삭제 주기 (하루: 86,399)
+                        remainTime = (cycle * 60) - 1; // 삭제 주기 (하루: 86,399)
                         List<String> fileList = new ArrayList<>();
                         scanDirectory(folderRoute, fileList);//확인
                         fileDelete(fileList);
@@ -161,7 +168,6 @@ public class backup_Delete {
 
                 } catch (Exception e) {
                     e.printStackTrace(); // 에러 발생시 Executor를 중지시킨다.
-                    exec.shutdown();
                 }
             }
         }, 0 , 1, TimeUnit.SECONDS);
